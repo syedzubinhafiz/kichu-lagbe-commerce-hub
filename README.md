@@ -1,4 +1,3 @@
-
 # Kichu Lagbe - E-commerce Platform
 
 Kichu Lagbe is a full-stack e-commerce platform built with React, TypeScript, and MongoDB. The name "Kichu Lagbe" means "Need Something" in Bengali, making it a perfect fit for an e-commerce solution.
@@ -6,186 +5,139 @@ Kichu Lagbe is a full-stack e-commerce platform built with React, TypeScript, an
 ## Features
 
 ### User Roles
-- **Admin**: Manage users, products, and orders
-- **Seller**: Create/update products, manage orders, view sales analytics
-- **Buyer**: Browse products, place orders, track deliveries
+- **Admin**: Manage users (ban/unban), view orders, view products.
+- **Seller**: Manage own products (CRUD), manage orders related to own products (update status), view own sales.
+- **Buyer**: Browse/search products, place orders, view own order history and status.
 
 ### Core Functionalities
-- **Authentication**: Role-based secure login/registration system
-- **Product Management**: CRUD operations for products with rich media support
-- **Order Management**: Complete order lifecycle from cart to delivery
-- **Responsive Design**: Mobile-first approach for all device compatibility
+- **Authentication**: Role-based secure login/registration system using JWT (Access + Refresh Tokens with HttpOnly cookie).
+- **Product Management**: CRUD operations for products (Sellers), product browsing/searching (Public).
+- **Order Management**: Order creation (Buyers), order viewing (Buyers, Seller involved, Admin), order status updates following lifecycle (Sellers, Admin).
+- **Admin User Management**: View all users, Ban/Unban users.
+- **Responsive Design**: Mobile-first approach for all device compatibility (Frontend responsibility).
 
 ## Tech Stack
 
 ### Frontend
-- **React**: UI library with TypeScript for type safety
-- **React Router**: Client-side routing
-- **TailwindCSS**: Utility-first CSS framework for styling
-- **shadcn/ui**: UI component library
-- **React Context**: State management for auth and cart functionality
-- **Lucide React**: Icon library
+- **Framework**: Vite + React
+- **Language**: TypeScript
+- **UI**: TailwindCSS + shadcn/ui
+- **Routing**: React Router
+- **State Management/Data Fetching**: Tanstack Query (React Query)
+- **Form Handling**: React Hook Form + Zod
+- **Icons**: Lucide React
 
-### Backend (Integration Instructions)
-- **Express.js**: Backend framework with TypeScript
-- **MongoDB**: NoSQL database for data storage
-- **Mongoose**: ODM for MongoDB
-- **JWT**: Authentication with access and refresh tokens
+### Backend
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **Database**: MongoDB
+- **ODM**: Mongoose
+- **Authentication**: JWT (jsonwebtoken)
+- **Validation**: Zod
+- **Runtime**: Node.js
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v18 or later)
-- npm/yarn
-- MongoDB database (local or cloud-based)
+- Node.js (v18 or later recommended)
+- npm (comes with Node.js)
+- MongoDB database (local instance or a cloud service like MongoDB Atlas - a free tier is available)
 
 ### Installation
 
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/kichu-lagbe.git
-cd kichu-lagbe
-```
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/yourusername/kichu-lagbe.git # Replace with your repo URL
+    cd kichu-lagbe
+    ```
 
-2. Install frontend dependencies
-```bash
-npm install
-```
+2.  **Install Frontend Dependencies**
+    ```bash
+    npm install
+    # or yarn install
+    ```
 
-3. Start the development server
-```bash
-npm run dev
-```
+3.  **Install Backend Dependencies**
+    ```bash
+    cd backend
+    npm install
+    # or yarn install
+    cd ..
+    ```
 
-### Environment Variables
+### Environment Variables Setup
 
-Create a `.env` file in the root directory with the following variables:
+**Backend:**
 
-```
-# MongoDB Connection String
-MONGODB_URI=your_mongodb_connection_string
+1.  Navigate to the `backend` directory.
+2.  Copy the example environment file:
+    ```bash
+    cp .env.example .env
+    ```
+3.  Edit the `.env` file in the `backend` directory and provide your actual values:
+    ```dotenv
+    # MongoDB Connection String (replace with your actual connection string)
+    MONGO_URI=mongodb+srv://<username>:<password>@<your-cluster-url>/<database-name>?retryWrites=true&w=majority
 
-# JWT Secret Keys
-JWT_SECRET=your_jwt_secret_key
-JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
+    # JWT Secrets (generate strong random strings for these)
+    # Example generation command: openssl rand -base64 32
+    JWT_ACCESS_SECRET=YOUR_STRONG_ACCESS_SECRET_HERE
+    JWT_REFRESH_SECRET=YOUR_STRONG_REFRESH_SECRET_HERE
 
-# Optional: Cloud Storage (for image uploads)
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+    # Port the backend server will run on
+    PORT=5000
+    ```
 
-# Optional: Payment Gateway (for bKash integration)
-BKASH_API_KEY=your_bkash_api_key
-BKASH_API_SECRET=your_bkash_api_secret
-```
+**Frontend:**
 
-## Backend Setup
+*   (If the frontend needs environment variables, e.g., for the API base URL if it's not relative, add instructions here. Currently, the frontend likely calls `/api/...` which works if served from the same domain or proxied).*
 
-To connect this frontend with a MongoDB backend:
+### Running the Application
 
-1. Set up a MongoDB database (locally or using MongoDB Atlas)
-2. Create an Express.js server with the following structure:
+1.  **Run the Backend Server:**
+    Open a terminal in the `backend` directory:
+    ```bash
+    npm run dev
+    ```
+    The backend API will start, typically on `http://localhost:5000` (or the `PORT` specified in `backend/.env`). You should see messages indicating MongoDB connection and the server starting.
 
-```
-backend/
-├── config/
-│   └── db.js        # Database connection setup
-├── controllers/     # Route controllers
-├── middleware/      # Auth middleware
-├── models/          # MongoDB schemas
-├── routes/          # API routes
-├── utils/           # Helper functions
-├── .env             # Environment variables
-└── server.js        # Entry point
-```
+2.  **Run the Frontend Development Server:**
+    Open another terminal in the main project root directory (`kichu-lagbe`):
+    ```bash
+    npm run dev
+    ```
+    The frontend application will open in your browser, usually at `http://localhost:5173`.
 
-3. Implement the API endpoints for:
-   - User authentication (register, login, refresh token)
-   - Product CRUD operations
-   - Order management
-   - User management
+*(Note: The backend includes CORS configuration allowing requests from `http://localhost:5173`. If your frontend runs on a different port, update the `origin` in `backend/src/server.ts`)*
 
-4. Connect your backend to the frontend by updating the API base URL in the frontend code.
+## API Structure Overview
+
+- **Authentication:** `/api/auth` (register, login, logout, refresh)
+- **Products:** `/api/products` (CRUD, list, view)
+- **Orders:** `/api/orders` (create, list own, list seller's, view, update status)
+- **Admin:** `/api/admin/users` (list, view, update status)
+
+*(Refer to the route files in `backend/src/routes/` for details)*
 
 ## Database Schema
 
-### Users Collection
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  email: String,
-  password: String (hashed),
-  role: String (admin/seller/buyer),
-  createdAt: Date,
-  updatedAt: Date,
-  isBanned: Boolean
-}
-```
+The database schema is defined by the Mongoose models located in the `backend/src/models/` directory:
 
-### Products Collection
-```javascript
-{
-  _id: ObjectId,
-  title: String,
-  slug: String,
-  description: String,
-  price: Number,
-  discountPrice: Number,
-  discountEnds: Date,
-  images: [String], // URLs
-  videoUrl: String,
-  categoryId: ObjectId,
-  sellerId: ObjectId,
-  stock: Number,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+- `User.ts`: Defines the structure for Admin, Seller, and Buyer users, including roles and status.
+- `Product.ts`: Defines the structure for products, including references to the seller.
+- `Order.ts`: Defines the structure for orders, including buyer, seller, product, status history, and shipping details.
 
-### Orders Collection
-```javascript
-{
-  _id: ObjectId,
-  userId: ObjectId,
-  items: [
-    {
-      productId: ObjectId,
-      quantity: Number,
-      price: Number
-    }
-  ],
-  totalAmount: Number,
-  status: String (pending/processing/out_for_delivery/completed/cancelled),
-  shippingAddress: {
-    fullName: String,
-    streetAddress: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    phoneNumber: String
-  },
-  paymentMethod: String,
-  paymentStatus: String,
-  createdAt: Date,
-  updatedAt: Date,
-  statusHistory: [
-    {
-      status: String,
-      timestamp: Date,
-      note: String
-    }
-  ]
-}
-```
+*(These models are the source of truth for the data structure.)*
 
 ## Demo Account Information
 
+*(Keep or update this section if you seed demo users)*
+
 For testing purposes, you can use these demo accounts:
 
-- **Admin**: admin@kichulage.com (any password)
-- **Seller**: seller@kichulage.com (any password)
-- **Buyer**: Register a new account or use the profile created during registration
+- **Admin**: Register a user and manually update their role in the database to `admin`.
+- **Seller**: Register a user with the role `seller` via `/api/auth/register` (if implemented) or update manually.
+- **Buyer**: Register a new user normally (defaults to `buyer`).
 
 ## License
 
