@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom Kichu Lagbe brand colors
+				"brand": {
+					"primary": "#00897B",    // Teal
+					"accent": "#FFC107",     // Amber
+					"secondary": "#673AB7",  // Deep Purple
+					"light": "#E0F2F1",      // Light Teal
+					"dark": "#004D40"        // Dark Teal
 				}
 			},
 			borderRadius: {
@@ -89,6 +98,10 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+				heading: ['Poppins', 'sans-serif']
 			}
 		}
 	},

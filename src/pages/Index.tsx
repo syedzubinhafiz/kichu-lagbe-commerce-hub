@@ -1,13 +1,38 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import PageLayout from '@/components/layout/PageLayout';
+import HeroSection from '@/components/home/HeroSection';
+import CategorySection from '@/components/home/CategorySection';
+import FeaturedProducts from '@/components/home/FeaturedProducts';
+import SpecialOfferBanner from '@/components/home/SpecialOfferBanner';
+import { getProducts, getCategories } from '@/data/mockData';
 
 const Index = () => {
+  // Get featured products and categories from mock data
+  const featuredProducts = getProducts(8);
+  const discountedProducts = getProducts().filter(product => product.discountPrice);
+  const categories = getCategories();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <PageLayout>
+      <HeroSection />
+      
+      <CategorySection categories={categories} />
+      
+      <FeaturedProducts 
+        products={featuredProducts} 
+        title="Featured Products" 
+        viewAllLink="/products"
+      />
+      
+      <SpecialOfferBanner />
+      
+      <FeaturedProducts 
+        products={discountedProducts.slice(0, 4)} 
+        title="Special Deals" 
+        viewAllLink="/products/deals"
+      />
+    </PageLayout>
   );
 };
 
