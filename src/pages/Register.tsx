@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -22,7 +21,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('buyer');
+  const [role, setRole] = useState<UserRole | undefined>(undefined);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
@@ -32,17 +31,23 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
+    if (!role) {
+      setError('Please select whether you want to sign up as a buyer or seller.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       await register(name, email, password, role);
-      navigate('/');
-    } catch (err) {
-      setError('Registration failed. Please try again.');
+      alert('Registration successful! Please log in.');
+      navigate('/login');
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -87,14 +92,14 @@ const Register = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">I want to</Label>
+              <Label htmlFor="role">I want to sign up as a...</Label>
               <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select buyer or seller" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="buyer">Shop as a buyer</SelectItem>
-                  <SelectItem value="seller">Sell products</SelectItem>
+                  <SelectItem value="buyer">Buyer</SelectItem>
+                  <SelectItem value="seller">Seller</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -106,8 +111,9 @@ const Register = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="•••••••• (min 6 characters)"
                 required
+                minLength={6}
               />
             </div>
 

@@ -1,10 +1,13 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
 import PageLayout from '@/components/layout/PageLayout';
 import ProductGrid from '@/components/products/ProductGrid';
-import { getProducts, getCategories } from '@/data/mockData';
+import { getCategories } from '@/data/mockData';
 import { Product, Category } from '@/types';
+import apiClient from '@/lib/apiClient';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,125 +27,100 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 
+interface BackendProduct {
+    _id: string;
+    title: string;
+    slug: string;
+    description: string;
+    price: number;
+    discountPrice?: number;
+    discountEnds?: string;
+    images: string[];
+    videoUrl?: string;
+    category: string;
+    seller: { _id: string; name: string; email: string; };
+    rating?: number;
+    stock: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+const mapBackendProductToFrontend = (bp: BackendProduct): Product => ({
+    id: bp._id,
+    title: bp.title,
+    slug: bp.slug,
+    description: bp.description,
+    price: bp.price,
+    discountPrice: bp.discountPrice,
+    discountEnds: bp.discountEnds,
+    images: bp.images,
+    videoUrl: bp.videoUrl,
+    categoryId: typeof bp.category === 'object' ? (bp.category as any)._id : bp.category,
+    sellerId: bp.seller?._id,
+    seller: bp.seller ? { id: bp.seller._id, name: bp.seller.name, email: bp.seller.email, role: 'seller', createdAt: '' } : undefined,
+    rating: bp.rating,
+    stock: bp.stock,
+    createdAt: bp.createdAt,
+    updatedAt: bp.updatedAt,
+});
+
 const ProductsList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // Filter states
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 30000]);
-  const [sortBy, setSortBy] = useState('newest');
-  const [showDiscount, setShowDiscount] = useState(false);
-  const [inStock, setInStock] = useState(true);
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest');
+  const [showDiscount, setShowDiscount] = useState(searchParams.get('discounted') === 'true');
+  const [inStock, setInStock] = useState(searchParams.get('inStock') !== 'false');
 
   useEffect(() => {
-    // Simulate loading data from API
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // Get all products and categories
-        const allProducts = getProducts();
-        const allCategories = getCategories();
-        
-        setProducts(allProducts);
-        setCategories(allCategories);
-      } catch (error) {
-        console.error("Error loading products:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadData();
+    setCategories(getCategories());
   }, []);
 
-  // Update filters when search params change
-  useEffect(() => {
-    const category = searchParams.get('category') || '';
-    const search = searchParams.get('search') || '';
-    
-    setSelectedCategory(category);
-    setSearchTerm(search);
-  }, [searchParams]);
+  const queryParams = useMemo(() => {
+    const params: Record<string, string> = {};
+    if (selectedCategory) params.category = selectedCategory;
+    if (searchTerm) params.search = searchTerm;
+    if (priceRange[0] > 0) params.minPrice = String(priceRange[0]);
+    if (priceRange[1] < 30000) params.maxPrice = String(priceRange[1]);
+    if (sortBy !== 'newest') params.sortBy = sortBy;
+    if (showDiscount) params.discounted = 'true';
+    if (!inStock) params.inStock = 'false';
+    return params;
+  }, [selectedCategory, searchTerm, priceRange, sortBy, showDiscount, inStock]);
 
-  // Apply filters whenever filter state changes
-  useEffect(() => {
-    if (products.length > 0) {
-      let filtered = [...products];
-      
-      // Apply category filter
-      if (selectedCategory) {
-        filtered = filtered.filter(product => 
-          product.category?.slug === selectedCategory
-        );
+  const { 
+    data: products, 
+    isLoading, 
+    isError, 
+    error 
+  } = useQuery<Product[], Error>({
+    queryKey: ['products', queryParams],
+    queryFn: async () => {
+      const response = await apiClient.get('/api/products', { params: queryParams });
+      if (!Array.isArray(response.data)) {
+          console.error("API did not return an array:", response.data);
+          throw new Error('Invalid data format received from API');
       }
-      
-      // Apply search term filter
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        filtered = filtered.filter(product => 
-          product.title.toLowerCase().includes(term) || 
-          product.description.toLowerCase().includes(term)
-        );
-      }
-      
-      // Apply price range filter
-      filtered = filtered.filter(product => {
-        const price = product.discountPrice || product.price;
-        return price >= priceRange[0] && price <= priceRange[1];
-      });
-      
-      // Apply discount filter
-      if (showDiscount) {
-        filtered = filtered.filter(product => !!product.discountPrice);
-      }
-      
-      // Apply stock filter
-      if (inStock) {
-        filtered = filtered.filter(product => product.stock > 0);
-      }
-      
-      // Apply sorting
-      switch (sortBy) {
-        case 'price_low':
-          filtered.sort((a, b) => 
-            (a.discountPrice || a.price) - (b.discountPrice || b.price)
-          );
-          break;
-        case 'price_high':
-          filtered.sort((a, b) => 
-            (b.discountPrice || b.price) - (a.discountPrice || a.price)
-          );
-          break;
-        case 'popular':
-          filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-          break;
-        case 'newest':
-        default:
-          filtered.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          break;
-      }
-      
-      setFilteredProducts(filtered);
-      
-      // Update URL with filters
-      const params = new URLSearchParams();
-      if (selectedCategory) params.set('category', selectedCategory);
-      if (searchTerm) params.set('search', searchTerm);
-      setSearchParams(params);
-    }
-  }, [products, selectedCategory, searchTerm, priceRange, sortBy, showDiscount, inStock, setSearchParams]);
+      return response.data.map((p: any) => ({ ...p, id: p._id }));
+    },
+  });
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (searchTerm) params.set('search', searchTerm);
+    if (sortBy !== 'newest') params.set('sortBy', sortBy);
+    if (showDiscount) params.set('discounted', 'true');
+    if (!inStock) params.set('inStock', 'false');
+    setSearchParams(params, { replace: true });
+  }, [selectedCategory, searchTerm, sortBy, showDiscount, inStock, setSearchParams]);
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Search is already applied via the useEffect
   };
 
   const clearFilters = () => {
@@ -152,12 +130,14 @@ const ProductsList = () => {
     setSortBy('newest');
     setShowDiscount(false);
     setInStock(true);
-    setSearchParams({});
+    setSearchParams({}, { replace: true });
   };
 
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
+
+  const filteredProducts = products || [];
 
   return (
     <PageLayout>
@@ -174,7 +154,6 @@ const ProductsList = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters sidebar - mobile */}
           <div 
             className={`lg:hidden fixed inset-0 z-40 bg-white p-6 transform transition-transform duration-300 ease-in-out ${
               showFilters ? 'translate-x-0' : 'translate-x-full'
@@ -187,11 +166,10 @@ const ProductsList = () => {
               </Button>
             </div>
 
-            <div className="space-y-6">
-              {/* Mobile filters content - same as desktop */}
+            <div className="space-y-6 overflow-y-auto h-[calc(100vh-100px)] pb-6">
               <div className="space-y-4">
                 <h4 className="font-medium">Search</h4>
-                <form onSubmit={handleSearch} className="flex gap-2">
+                <form onSubmit={handleSearchSubmit} className="flex gap-2">
                   <Input 
                     placeholder="Search products..." 
                     value={searchTerm}
@@ -243,12 +221,12 @@ const ProductsList = () => {
                 <h4 className="font-medium mb-2">Other Filters</h4>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
-                    id="discounted" 
+                    id="discounted-mob" 
                     checked={showDiscount}
                     onCheckedChange={(checked) => setShowDiscount(checked as boolean)}
                   />
                   <label
-                    htmlFor="discounted"
+                    htmlFor="discounted-mob"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     Discounted Items
@@ -256,12 +234,12 @@ const ProductsList = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
-                    id="instock" 
+                    id="instock-mob" 
                     checked={inStock}
                     onCheckedChange={(checked) => setInStock(checked as boolean)}
                   />
                   <label
-                    htmlFor="instock"
+                    htmlFor="instock-mob"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     In Stock Only
@@ -281,12 +259,11 @@ const ProductsList = () => {
             </div>
           </div>
 
-          {/* Filters sidebar - desktop */}
           <div className="hidden lg:block w-64 flex-shrink-0">
             <div className="sticky top-24 space-y-6">
               <div className="space-y-4">
                 <h4 className="font-medium">Search</h4>
-                <form onSubmit={handleSearch} className="flex gap-2">
+                <form onSubmit={handleSearchSubmit} className="flex gap-2">
                   <Input 
                     placeholder="Search products..." 
                     value={searchTerm}
@@ -393,11 +370,10 @@ const ProductsList = () => {
             </div>
           </div>
 
-          {/* Products section */}
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6">
               <p className="text-gray-600">
-                Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                {isLoading ? 'Loading...' : `Showing ${filteredProducts.length} ${filteredProducts.length === 1 ? 'product' : 'products'}`}
               </p>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[180px]">
@@ -415,6 +391,10 @@ const ProductsList = () => {
             {isLoading ? (
               <div className="py-10 text-center">
                 <p>Loading products...</p>
+              </div>
+            ) : isError ? (
+              <div className="py-10 text-center text-red-600">
+                <p>Error loading products: {error?.message || 'Unknown error'}</p>
               </div>
             ) : (
               <>
@@ -437,6 +417,7 @@ const ProductsList = () => {
           </div>
         </div>
       </div>
+      <ReactQueryDevtools initialIsOpen={false} />
     </PageLayout>
   );
 };

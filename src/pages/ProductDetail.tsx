@@ -1,66 +1,102 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProductBySlug, getReviewsByProductId } from '@/data/mockData';
-import { Product, Review } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { Product, Review, Category, User as FrontendUser } from '@/types';
 import { useCart } from '@/context/CartContext';
+import apiClient from '@/lib/apiClient';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { 
-  ShoppingCart, 
-  Heart, 
-  TruckIcon, 
-  ShieldCheck, 
-  ArrowLeft,
-  Star,
-  Minus,
-  Plus
-} from 'lucide-react';
+import { ShoppingCart, Heart, TruckIcon, ShieldCheck, ArrowLeft, Star, Minus, Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
+interface BackendProductDetail {
+    _id: string;
+    title: string;
+    slug: string;
+    description: string;
+    price: number;
+    discountPrice?: number;
+    discountEnds?: string;
+    images: string[];
+    videoUrl?: string;
+    category: { _id: string; name: string; slug: string; image?: string };
+    seller: { _id: string; name: string; email: string; };
+    rating?: number;
+    stock: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+const mapBackendProductDetailToFrontend = (bp: BackendProductDetail): Product => ({
+    id: bp._id,
+    title: bp.title,
+    slug: bp.slug,
+    description: bp.description,
+    price: bp.price,
+    discountPrice: bp.discountPrice,
+    discountEnds: bp.discountEnds,
+    images: bp.images,
+    videoUrl: bp.videoUrl,
+    categoryId: bp.category?._id,
+    category: bp.category ? {
+        id: bp.category._id,
+        name: bp.category.name,
+        slug: bp.category.slug,
+        image: bp.category.image,
+    } : undefined,
+    sellerId: bp.seller?._id,
+    seller: bp.seller ? {
+        id: bp.seller._id,
+        name: bp.seller.name,
+        email: bp.seller.email,
+        role: 'seller',
+        createdAt: ''
+    } : undefined,
+    rating: bp.rating,
+    stock: bp.stock,
+    createdAt: bp.createdAt,
+    updatedAt: bp.updatedAt,
+});
+
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const { addToCart } = useCart();
-  
-  // Load product and reviews
-  useEffect(() => {
-    if (!slug) return;
 
-    const fetchData = () => {
-      setIsLoading(true);
-      try {
-        // Get product by slug
-        const foundProduct = getProductBySlug(slug);
-        
-        if (foundProduct) {
-          setProduct(foundProduct);
-          setSelectedImage(foundProduct.images[0]);
-          
-          // Get reviews for this product
-          const productReviews = getReviewsByProductId(foundProduct.id);
-          setReviews(productReviews);
-        }
-      } catch (error) {
-        console.error("Error loading product:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [slug]);
+  const { 
+      data: backendProduct, 
+      isLoading, 
+      isError, 
+      error 
+  } = useQuery<BackendProductDetail, Error>({
+    queryKey: ['product', slug], 
+    queryFn: async () => {
+      if (!slug) throw new Error('Product slug is missing');
+      const response = await apiClient.get(`/api/products/${slug}`); 
+      return response.data;
+    },
+    enabled: !!slug,
+    retry: 1,
+  });
 
-  // Calculate discount countdown timer if applicable
+  const product: Product | null = backendProduct ? mapBackendProductDetailToFrontend(backendProduct) : null;
+  const reviews: Review[] = [];
+
   useEffect(() => {
-    if (!product?.discountEnds) return;
+    if (product && product.images.length > 0 && !selectedImage) {
+      setSelectedImage(product.images[0]);
+    }
+  }, [product, selectedImage]);
+
+  useEffect(() => {
+    if (!product?.discountEnds) {
+        setTimeRemaining(null);
+        return;
+    }
 
     const calculateTimeRemaining = () => {
       const now = new Date();
@@ -108,7 +144,24 @@ const ProductDetail = () => {
     return (
       <PageLayout>
         <div className="container mx-auto px-4 py-8 text-center">
-          <p>Loading product...</p>
+          <p>Loading product details...</p>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageLayout>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-600">Error Loading Product</h2>
+          <p className="mb-8">Could not fetch product details: {error?.message || 'Unknown error'}</p>
+          <Link to="/products">
+            <Button variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Products
+            </Button>
+          </Link>
         </div>
       </PageLayout>
     );
@@ -119,7 +172,7 @@ const ProductDetail = () => {
       <PageLayout>
         <div className="container mx-auto px-4 py-16 text-center">
           <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-          <p className="mb-8">The product you're looking for doesn't exist.</p>
+          <p className="mb-8">The product you're looking for doesn't exist or couldn't be loaded.</p>
           <Link to="/products">
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -131,18 +184,15 @@ const ProductDetail = () => {
     );
   }
 
-  // Calculate discount percentage if applicable
   const discountPercentage = product.discountPrice
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0;
 
-  // Check if discount is active
   const isDiscountActive = product.discountPrice && timeRemaining;
 
   return (
     <PageLayout>
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <nav className="flex mb-6 text-sm">
           <ol className="flex items-center flex-wrap">
             <li className="flex items-center">
@@ -174,9 +224,7 @@ const ProductDetail = () => {
           </ol>
         </nav>
 
-        {/* Product details section */}
         <div className="flex flex-col lg:flex-row gap-8 mb-12">
-          {/* Product images */}
           <div className="w-full lg:w-1/2">
             <div className="mb-4 aspect-square overflow-hidden rounded-lg border bg-white">
               <img
@@ -204,11 +252,9 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Product info */}
           <div className="w-full lg:w-1/2">
             <h1 className="text-3xl font-bold mb-2">{product.title}</h1>
 
-            {/* Ratings */}
             <div className="flex items-center mb-4">
               <div className="flex mr-2">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -228,7 +274,6 @@ const ProductDetail = () => {
               </span>
             </div>
 
-            {/* Price */}
             <div className="mb-6">
               {isDiscountActive ? (
                 <div className="flex items-center gap-2">
@@ -249,50 +294,18 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Discount countdown */}
             {isDiscountActive && timeRemaining && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm font-medium text-gray-600 mb-2">Special price ends in:</p>
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="bg-brand-primary text-white rounded p-2 w-12 text-center">
-                      <span className="text-lg font-bold">{timeRemaining.days}</span>
-                    </div>
-                    <span className="text-xs mt-1">Days</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="bg-brand-primary text-white rounded p-2 w-12 text-center">
-                      <span className="text-lg font-bold">{timeRemaining.hours}</span>
-                    </div>
-                    <span className="text-xs mt-1">Hours</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="bg-brand-primary text-white rounded p-2 w-12 text-center">
-                      <span className="text-lg font-bold">{timeRemaining.minutes}</span>
-                    </div>
-                    <span className="text-xs mt-1">Minutes</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="bg-brand-primary text-white rounded p-2 w-12 text-center">
-                      <span className="text-lg font-bold">{timeRemaining.seconds}</span>
-                    </div>
-                    <span className="text-xs mt-1">Seconds</span>
-                  </div>
-                </div>
+              <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md text-yellow-800">
+                <p className="font-medium text-sm text-center">
+                    Offer ends in: {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
+                </p>
               </div>
             )}
 
-            {/* Stock status */}
-            <div className="mb-6">
-              <p className="text-sm text-gray-600">
-                Availability: 
-                <span className={`ml-2 font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {product.stock > 0 ? `In Stock (${product.stock} available)` : 'Out of Stock'}
-                </span>
-              </p>
-            </div>
+            <p className="text-gray-600 mb-6">
+                {product.description.substring(0, 150)}{product.description.length > 150 ? '...' : ''}
+            </p>
 
-            {/* Quantity selector */}
             <div className="flex items-center mb-6">
               <span className="text-sm font-medium mr-4">Quantity:</span>
               <div className="flex items-center border rounded-md">
@@ -316,130 +329,76 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Button
-                size="lg"
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <Button 
+                size="lg" 
                 className="flex-1 bg-brand-primary hover:bg-brand-dark"
-                disabled={product.stock <= 0}
                 onClick={handleAddToCart}
+                disabled={product.stock <= 0}
               >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
+                <ShoppingCart className="mr-2 h-5 w-5" /> 
+                {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
               </Button>
               <Button size="lg" variant="outline" className="flex-1">
-                <Heart className="mr-2 h-5 w-5" />
-                Add to Wishlist
+                <Heart className="mr-2 h-5 w-5" /> Add to Wishlist
               </Button>
             </div>
 
-            {/* Seller info */}
             {product.seller && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm font-medium">Sold by:</p>
-                <p className="text-brand-primary font-medium">{product.seller.name}</p>
-              </div>
+                <div className="text-sm text-gray-600 mb-4">
+                    Sold by: <Link to={`/seller/${product.seller.id}`} className="text-brand-primary hover:underline">{product.seller.name}</Link>
+                </div>
             )}
 
-            {/* Shipping & return */}
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <TruckIcon className="h-5 w-5 mr-2 text-brand-primary" />
-                <span className="text-sm">Free shipping for orders above ৳2000</span>
+            <div className="space-y-3 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <TruckIcon size={18} /> Standard Delivery (3-5 days)
               </div>
-              <div className="flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-brand-primary" />
-                <span className="text-sm">30 days return policy</span>
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={18} /> 1 Year Warranty Included
               </div>
             </div>
+
           </div>
         </div>
 
-        {/* Product details tabs */}
-        <div className="mb-12">
-          <Tabs defaultValue="description">
-            <TabsList className="w-full grid grid-cols-3">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="specifications">Specifications</TabsTrigger>
-              <TabsTrigger value="reviews">
-                Reviews ({reviews.length})
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="description" className="p-6 bg-white border rounded-b-lg">
-              <div className="prose max-w-none">
-                <p>{product.description}</p>
-              </div>
-            </TabsContent>
-            <TabsContent value="specifications" className="p-6 bg-white border rounded-b-lg">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="flex justify-between">
-                    <span className="font-medium">Category</span>
-                    <span>{product.category?.name}</span>
-                  </p>
-                  <Separator />
-                  <p className="flex justify-between">
-                    <span className="font-medium">Brand</span>
-                    <span>Generic</span>
-                  </p>
-                  <Separator />
-                  <p className="flex justify-between">
-                    <span className="font-medium">Item Code</span>
-                    <span>{product.id}</span>
-                  </p>
+        <Tabs defaultValue="description">
+          <TabsList className="mb-4">
+            <TabsTrigger value="description">Description</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
+          </TabsList>
+          <TabsContent value="description">
+            <div className="prose max-w-none">
+              <p>{product.description}</p>
+              {product.videoUrl && (
+                <div className="mt-6 aspect-video">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={product.videoUrl.replace("watch?v=", "embed/")}
+                        title="Product Video" 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen>
+                    </iframe>
                 </div>
-                <div className="space-y-2">
-                  <p className="flex justify-between">
-                    <span className="font-medium">Weight</span>
-                    <span>0.5 kg</span>
-                  </p>
-                  <Separator />
-                  <p className="flex justify-between">
-                    <span className="font-medium">Manufacturing Date</span>
-                    <span>2022</span>
-                  </p>
-                  <Separator />
-                  <p className="flex justify-between">
-                    <span className="font-medium">Country of Origin</span>
-                    <span>Bangladesh</span>
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="reviews" className="p-6 bg-white border rounded-b-lg">
-              {reviews.length > 0 ? (
-                <div className="space-y-6">
-                  {reviews.map(review => (
-                    <div key={review.id} className="border-b pb-4 last:border-b-0 last:pb-0">
-                      <div className="flex items-center mb-2">
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              size={16}
-                              className={`${
-                                star <= review.rating
-                                  ? 'fill-brand-accent text-brand-accent'
-                                  : 'fill-gray-200 text-gray-200'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="ml-2 text-sm font-medium">{review.user?.name}</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{review.comment}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p>No reviews yet. Be the first to review this product!</p>
               )}
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="reviews">
+            {reviews.length === 0 ? (
+                <p>No reviews yet for this product.</p>
+            ) : (
+                <div className="space-y-6">
+                    {reviews.map(review => (
+                        <div key={review.id} className="border-b pb-4">
+                           {/* ... Review display component ... */} 
+                        </div>
+                    ))}
+                </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </PageLayout>
   );

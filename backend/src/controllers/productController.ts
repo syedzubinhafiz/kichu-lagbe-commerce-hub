@@ -45,32 +45,77 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// @desc    Get all products (public access, with filtering/searching)
+// @desc    Get all products (public access, with filtering/sorting)
 // @route   GET /api/products
 // @access  Public
 export const getProducts = async (req: AuthRequest, res: Response) => {
   try {
-    // Basic Filtering/Searching (can be expanded)
-    const query = req.query;
+    const { category, sellerId, search, minPrice, maxPrice, sortBy, discounted, inStock } = req.query;
     const filter: any = {};
+    const sort: any = {};
 
-    if (query.category) {
-      filter.category = query.category as string;
+    if (category) {
+      filter.category = category as string;
     }
-    if (query.sellerId) { // Allow filtering by seller
-      filter.seller = query.sellerId as string;
+    if (sellerId) {
+      filter.seller = sellerId as string;
     }
-    if (query.search) {
-      filter.$text = { $search: query.search as string };
+    if (search) {
+      filter.$text = { $search: search as string };
     }
-    if (query.minPrice) {
-      filter.price = { ...filter.price, $gte: Number(query.minPrice) };
+    
+    const priceFilter: any = {};
+    if (minPrice) {
+        priceFilter.$gte = Number(minPrice);
     }
-    if (query.maxPrice) {
-      filter.price = { ...filter.price, $lte: Number(query.maxPrice) };
+    if (maxPrice) {
+        priceFilter.$lte = Number(maxPrice);
+    }
+    // Apply price filter based on discountPrice or regular price
+    if (Object.keys(priceFilter).length > 0) {
+        filter.$or = [
+            { price: priceFilter }, // Filter by regular price
+            { discountPrice: priceFilter } // Filter by discount price
+        ];
+        // If filtering only discounted, the above might need adjustment
     }
 
-    const products = await ProductModel.find(filter).populate('seller', 'name email'); // Populate seller info
+    // Handle discounted filter
+    if (discounted === 'true') {
+        filter.discountPrice = { $exists: true, $ne: null };
+        // Ensure discount is active (optional: check discountEnds date)
+        // filter["discountEnds"] = { $gte: new Date() };
+    }
+
+    // Handle inStock filter (assuming stock > 0 means in stock)
+    if (inStock === 'true' || inStock === undefined) { // Default to inStock=true
+        filter.stock = { $gt: 0 };
+    }
+
+    // Handle sorting
+    switch (sortBy) {
+        case 'price_low':
+            // Sort primarily by discountPrice, then price
+            sort.discountPrice = 1;
+            sort.price = 1;
+            break;
+        case 'price_high':
+            sort.discountPrice = -1;
+            sort.price = -1;
+            break;
+        case 'popular': // Assuming rating exists - add default if not
+            sort.rating = -1;
+            break;
+        case 'newest':
+        default:
+            sort.createdAt = -1;
+            break;
+    }
+
+    const products = await ProductModel.find(filter)
+                                       .populate('seller', 'name email') // Populate seller info
+                                       .sort(sort); // Apply sorting
+                                       
     res.json(products);
   } catch (error: any) {
     console.error('Get Products Error:', error);
@@ -78,25 +123,36 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// @desc    Get single product by ID
-// @route   GET /api/products/:id
+// @desc    Get single product by ID or Slug
+// @route   GET /api/products/:identifier (where identifier is ID or slug)
 // @access  Public
-export const getProductById = async (req: AuthRequest, res: Response) => {
+export const getProductByIdOrSlug = async (req: AuthRequest, res: Response) => {
   try {
-    const product = await ProductModel.findById(req.params.id).populate(
-      'seller',
-      'name email'
-    );
+    const identifier = req.params.identifier;
+    let product;
+
+    // Check if identifier looks like a MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      product = await ProductModel.findById(identifier)
+                                  .populate('seller', 'name email')
+                                  .populate('category'); // Populate category details
+    } else {
+      // Assume it's a slug
+      product = await ProductModel.findOne({ slug: identifier })
+                                  .populate('seller', 'name email')
+                                  .populate('category'); // Populate category details
+    }
+
     if (product) {
       res.json(product);
     } else {
       res.status(404).json({ message: 'Product not found' });
     }
   } catch (error: any) {
-    console.error('Get Product By ID Error:', error);
-    // Handle CastError if ID format is invalid
+    console.error('Get Product By ID/Slug Error:', error);
+    // Handle CastError specifically if findById was attempted with an invalid format
     if (error.name === 'CastError') {
-        return res.status(404).json({ message: 'Product not found (invalid ID format)' });
+        return res.status(404).json({ message: 'Product not found (invalid ID/slug format)' });
     }
     res.status(500).json({ message: 'Server error fetching product' });
   }
@@ -113,6 +169,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
 
   try {
     const validatedData = updateProductSchema.parse(req.body);
+    // Use findById for updates as ID is more reliable
     const product = await ProductModel.findById(req.params.id);
 
     if (!product) {
@@ -125,6 +182,9 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
         .status(403)
         .json({ message: 'User not authorized to update this product' });
     }
+
+    // Prevent slug modification on update if needed (optional)
+    // delete validatedData.slug;
 
     Object.assign(product, validatedData);
 
@@ -152,6 +212,7 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
   }
 
   try {
+    // Use findById for deletes
     const product = await ProductModel.findById(req.params.id);
 
     if (!product) {

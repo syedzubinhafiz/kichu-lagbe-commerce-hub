@@ -15,6 +15,7 @@ export interface IProduct extends Document {
   discountCountdown?: Date;
   createdAt: Date;
   updatedAt: Date;
+  slug: string;
 }
 
 // Interface representing the static methods of the model.
@@ -31,6 +32,14 @@ const ProductSchema: Schema<IProduct> = new Schema(
       type: String,
       required: [true, 'Product title is required'],
       trim: true,
+    },
+    slug: {
+      type: String,
+      required: [true, 'Product slug is required'],
+      trim: true,
+      unique: true,
+      lowercase: true,
+      match: [/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase alphanumeric with hyphens'],
     },
     description: {
       type: String,
@@ -69,7 +78,7 @@ const ProductSchema: Schema<IProduct> = new Schema(
 );
 
 // Indexing for frequently searched fields
-ProductSchema.index({ title: 'text', description: 'text', category: 1, price: 1 });
+ProductSchema.index({ title: 'text', description: 'text', category: 1, price: 1, slug: 1 });
 
 const ProductModel = mongoose.model<IProduct, IProductModel>(
   'Product',

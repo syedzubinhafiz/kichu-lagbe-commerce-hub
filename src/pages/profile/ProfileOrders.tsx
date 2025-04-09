@@ -1,10 +1,10 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '@/lib/apiClient';
 import { useAuth } from '@/context/AuthContext';
 import PageLayout from '@/components/layout/PageLayout';
-import { getOrdersByUserId } from '@/data/mockData';
-import { Order } from '@/types';
+import { Order as FrontendOrder, OrderStatus as FrontendStatus, Product as FrontendProduct, User as FrontendUser } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -26,51 +26,140 @@ import {
   Clock,
   CheckCircle,
   TruckIcon,
-  XCircle
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface BackendOrderItem {
+    _id: string;
+    buyer: { _id: string; name: string; email: string };
+    seller: { _id: string; name: string; email: string };
+    product: { _id: string; title: string; price: number; images: string[]; };
+    quantity: number;
+    totalPrice: number;
+    paymentMethod: string;
+    currentStatus: string;
+    statusHistory: {
+        status: string;
+        timestamp: string;
+        updatedBy?: { _id: string };
+    }[];
+    shippingAddress: {
+        street: string;
+        city: string;
+        postalCode: string;
+        country: string;
+    };
+    createdAt: string;
+    updatedAt: string;
+}
+
+const mapBackendStatusToFrontend = (backendStatus: string): FrontendStatus => {
+    switch (backendStatus) {
+        case 'Pending Approval': return 'pending';
+        case 'Processing': return 'processing';
+        case 'Out for Delivery': return 'out_for_delivery';
+        case 'Completed': return 'completed';
+        case 'Cancelled':
+        case 'Rejected': return 'cancelled';
+        default: return 'pending';
+    }
+};
+
+const mapBackendOrderToFrontend = (bo: BackendOrderItem): FrontendOrder => {
+    const orderItem = {
+        id: bo.product._id,
+        productId: bo.product._id,
+        product: {
+            id: bo.product._id,
+            title: bo.product.title,
+            price: bo.product.price,
+            images: bo.product.images,
+            slug: bo.product._id,
+            description: '',
+            categoryId: '',
+            sellerId: bo.seller._id,
+            stock: 1,
+            createdAt: bo.createdAt,
+            updatedAt: bo.updatedAt,
+        } as FrontendProduct,
+        quantity: bo.quantity,
+        price: bo.totalPrice / bo.quantity,
+    };
+
+    return {
+        id: bo._id,
+        userId: bo.buyer._id,
+        user: {
+            id: bo.buyer._id,
+            name: bo.buyer.name,
+            email: bo.buyer.email,
+            role: 'buyer',
+            createdAt: ''
+        } as FrontendUser,
+        items: [orderItem],
+        totalAmount: bo.totalPrice,
+        status: mapBackendStatusToFrontend(bo.currentStatus),
+        shippingAddress: {
+            streetAddress: bo.shippingAddress.street,
+            city: bo.shippingAddress.city,
+            zipCode: bo.shippingAddress.postalCode,
+            state: bo.shippingAddress.country,
+            fullName: bo.buyer.name,
+            phoneNumber: '',
+        },
+        paymentMethod: bo.paymentMethod,
+        paymentStatus: bo.currentStatus === 'Completed' ? 'completed' : 'pending',
+        createdAt: bo.createdAt,
+        updatedAt: bo.updatedAt,
+        statusHistory: bo.statusHistory.map(h => ({
+            status: mapBackendStatusToFrontend(h.status),
+            timestamp: h.timestamp,
+            note: ''
+        })),
+    };
+};
 
 const ProfileOrders = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is logged in, if not redirect to login
   React.useEffect(() => {
     if (!isAuthenticated) {
+      toast.error('Please log in to view your orders.');
       navigate('/login');
-      return;
     }
+  }, [isAuthenticated, navigate]);
 
-    // Load orders for this user
-    const loadOrders = () => {
-      setIsLoading(true);
-      try {
-        if (user) {
-          const userOrders = getOrdersByUserId(user.id);
-          setOrders(userOrders);
-        }
-      } catch (error) {
-        console.error("Error loading orders:", error);
-        toast.error("Failed to load your orders");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { 
+      data: backendOrders, 
+      isLoading, 
+      isError, 
+      error 
+  } = useQuery<BackendOrderItem[], Error>({
+      queryKey: ['myOrders', user?.id],
+      queryFn: async () => {
+          const response = await apiClient.get('/api/orders/myorders');
+          if (!Array.isArray(response.data)) {
+              throw new Error('Invalid data format received for orders');
+          }
+          return response.data;
+      },
+      enabled: !!isAuthenticated && !!user?.id,
+      staleTime: 5 * 60 * 1000,
+  });
 
-    loadOrders();
-  }, [user, isAuthenticated, navigate]);
-
-  // Filter orders by status
-  const pendingOrders = orders.filter(order => order.status === 'pending');
-  const processingOrders = orders.filter(order => 
-    order.status === 'processing' || order.status === 'out_for_delivery'
+  const orders: FrontendOrder[] = React.useMemo(() => 
+      backendOrders ? backendOrders.map(mapBackendOrderToFrontend) : [],
+      [backendOrders]
   );
+
+  const pendingOrders = orders.filter(order => order.status === 'pending');
+  const processingOrders = orders.filter(order => order.status === 'processing' || order.status === 'out_for_delivery');
   const completedOrders = orders.filter(order => order.status === 'completed');
   const cancelledOrders = orders.filter(order => order.status === 'cancelled');
 
-  // Get status icon based on order status
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -88,7 +177,7 @@ const ProfileOrders = () => {
     }
   };
 
-  const OrderCard = ({ order }: { order: Order }) => (
+  const OrderCard = ({ order }: { order: FrontendOrder }) => (
     <Card key={order.id} className="mb-4">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
@@ -111,7 +200,6 @@ const ProfileOrders = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Order Items */}
           <div>
             {order.items.map(item => (
               <div key={item.id} className="flex items-center justify-between py-3 border-b last:border-b-0">
@@ -135,13 +223,11 @@ const ProfileOrders = () => {
           
           <Separator />
           
-          {/* Order Summary */}
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Total Amount</span>
             <span className="font-bold text-brand-primary">৳{order.totalAmount}</span>
           </div>
           
-          {/* Order Timeline */}
           {order.statusHistory && order.statusHistory.length > 0 && (
             <div className="mt-4 pt-4 border-t">
               <h4 className="text-sm font-medium mb-3">Order Timeline</h4>
@@ -164,7 +250,6 @@ const ProfileOrders = () => {
             </div>
           )}
           
-          {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" size="sm">
               View Details
@@ -187,9 +272,16 @@ const ProfileOrders = () => {
         <p className="text-gray-600 mb-8">View and track your orders</p>
 
         {isLoading ? (
-          <div className="flex justify-center py-10">
-            <p>Loading your orders...</p>
+          <div className="flex justify-center py-10 items-center">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading your orders...
           </div>
+        ) : isError ? (
+             <div className="text-center py-16 space-y-4 text-red-600">
+                <XCircle className="h-12 w-12 mx-auto"/>
+                <h2 className="text-2xl font-medium">Error Loading Orders</h2>
+                <p>Could not fetch your orders. Please try again later.</p>
+                <p className="text-sm">({error?.message || 'Unknown error'})</p>
+             </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-16 space-y-6">
             <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
