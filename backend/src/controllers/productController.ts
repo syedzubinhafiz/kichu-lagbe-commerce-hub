@@ -49,10 +49,13 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 // @route   GET /api/products
 // @access  Public
 export const getProducts = async (req: AuthRequest, res: Response) => {
+  console.log('[Backend] Entering getProducts controller...'); // Log entry
   try {
     const { category, sellerId, search, minPrice, maxPrice, sortBy, discounted, inStock } = req.query;
     const filter: any = {};
     const sort: any = {};
+
+    console.log('[Backend] Query Params:', req.query); // Log query params
 
     if (category) {
       filter.category = category as string;
@@ -88,9 +91,10 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
     }
 
     // Handle inStock filter (assuming stock > 0 means in stock)
-    if (inStock === 'true' || inStock === undefined) { // Default to inStock=true
-        filter.stock = { $gt: 0 };
-    }
+    // TEMPORARILY COMMENTED OUT FOR DEBUGGING
+    // if (inStock === 'true' || inStock === undefined) { // Default to inStock=true
+    //     filter.stock = { $gt: 0 };
+    // }
 
     // Handle sorting
     switch (sortBy) {
@@ -112,13 +116,18 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
             break;
     }
 
+    console.log('[Backend] Query Filter:', JSON.stringify(filter)); // Log the filter object
+    console.log('[Backend] Sort Options:', JSON.stringify(sort)); // Log sort options
+
     const products = await ProductModel.find(filter)
                                        .populate('seller', 'name email') // Populate seller info
                                        .sort(sort); // Apply sorting
+
+    console.log(`[Backend] Found ${products.length} products.`); // Log number of products found
                                        
     res.json(products);
   } catch (error: any) {
-    console.error('Get Products Error:', error);
+    console.error('[Backend] Get Products Error:', error); // Log any errors
     res.status(500).json({ message: 'Server error fetching products' });
   }
 };

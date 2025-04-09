@@ -227,11 +227,17 @@ const ProductDetail = () => {
         <div className="flex flex-col lg:flex-row gap-8 mb-12">
           <div className="w-full lg:w-1/2">
             <div className="mb-4 aspect-square overflow-hidden rounded-lg border bg-white">
-              <img
-                src={selectedImage || product.images[0]}
-                alt={product.title}
-                className="h-full w-full object-contain p-4"
-              />
+              {product.images && product.images.length > 0 ? (
+                  <img
+                    src={selectedImage || product.images[0]}
+                    alt={product.title}
+                    className="h-full w-full object-contain p-4"
+                  />
+              ) : (
+                  <div className="h-full w-full flex items-center justify-center bg-gray-100">
+                    <span className="text-gray-500">No Image Available</span>
+                  </div>
+              )}
             </div>
             <div className="grid grid-cols-4 gap-4">
               {product.images.map((image, idx) => (

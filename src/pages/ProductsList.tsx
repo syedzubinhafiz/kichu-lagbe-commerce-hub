@@ -189,7 +189,6 @@ const ProductsList = () => {
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
                     {categories.map(category => (
                       <SelectItem key={category.id} value={category.slug}>
                         {category.name}

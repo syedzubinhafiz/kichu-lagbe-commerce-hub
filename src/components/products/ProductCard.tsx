@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/types';
@@ -31,11 +30,18 @@ const ProductCard = ({ product, className }: ProductCardProps) => {
       <div className="relative overflow-hidden pt-[56.25%]">
         {/* Product image */}
         <Link to={`/product/${product.slug}`}>
-          <img
-            src={product.images[0]}
-            alt={product.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+          {product.images && product.images.length > 0 ? (
+            <img
+              src={product.images[0]}
+              alt={product.title}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            // Optional: Render a placeholder if no image
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+              <span className="text-gray-500 text-sm">No Image</span>
+            </div>
+          )}
         </Link>
 
         {/* Discount badge */}

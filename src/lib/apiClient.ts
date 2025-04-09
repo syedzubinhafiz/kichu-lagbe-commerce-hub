@@ -8,15 +8,41 @@ const apiClient = axios.create({
   withCredentials: true, // Important to send cookies (like the refreshToken)
 });
 
-// Request interceptor to add the auth token header to requests
+// Define public routes (or patterns)
+const publicRoutes = [
+  '/api/products', // GET products list
+  // Add other public GET routes here, e.g., '/api/products/:slug', '/api/categories'
+  // Use startsWith for patterns like /api/products/...
+];
+
+// Request interceptor to add the auth token header ONLY to non-public requests
 apiClient.interceptors.request.use(
   (config) => {
-    // Retrieve the token from wherever it's stored (e.g., localStorage, zustand, redux)
-    // This assumes you store the token under the key 'accessToken' in localStorage
     const token = localStorage.getItem('accessToken');
-    if (token) {
+    
+    // Check if the request URL matches any public route pattern
+    const isPublicRoute = publicRoutes.some(route => 
+      (config.url?.startsWith(route) && config.method?.toLowerCase() === 'get') ||
+      // Add more specific checks if needed, e.g., regex for slugs
+      (route.includes(':') && new RegExp(`^${route.replace(/\:[^\/]+/g, '[^\/]+')}$`).test(config.url || '') && config.method?.toLowerCase() === 'get')
+    );
+
+    // --- DEBUG LOGGING START ---
+    console.log('[API Interceptor] Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      isPublic: isPublicRoute,
+      tokenExists: !!token,
+      sendingAuthHeader: token && !isPublicRoute
+    });
+    // --- DEBUG LOGGING END ---
+
+    // Only add Authorization header if a token exists AND it's NOT a public GET route
+    if (token && !isPublicRoute) {
+      console.log('[API Interceptor] Attaching Auth Header');
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {

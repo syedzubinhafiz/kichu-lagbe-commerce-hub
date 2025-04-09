@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -155,7 +154,7 @@ const Header = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/categories" className="text-foreground hover:text-brand-primary">
+                  <Link to="/products" className="text-foreground hover:text-brand-primary">
                     Categories
                   </Link>
                 </li>
@@ -238,7 +237,7 @@ const Header = () => {
                 </li>
                 <li>
                   <Link 
-                    to="/categories" 
+                    to="/products" 
                     className="block py-2 text-lg font-medium"
                     onClick={toggleMenu}
                   >
