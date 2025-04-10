@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import ProductModel, { IProduct } from '../models/Product';
+import CategoryModel from '../models/Category'; // Import CategoryModel
 import UserModel, { UserRole, IUser } from '../models/User';
 import { AuthRequest } from '../middlewares/authMiddleware'; // Import augmented Request type
 import { z } from 'zod';
@@ -55,13 +56,25 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
     const filter: any = {};
     const sort: any = {};
 
-    console.log('[Backend] Query Params:', req.query); // Log query params
+    console.log('[Backend] Raw Query Params:', req.query);
 
+    // Category Filtering: Need to find Category ObjectId based on slug
     if (category) {
-      filter.category = category as string;
+        console.log(`[Backend] Filtering by category slug: ${category}`);
+        const categoryDoc = await CategoryModel.findOne({ slug: category as string }).select('_id').lean(); // Use lean for plain object
+        
+        if (categoryDoc) {
+            console.log(`[Backend] Found Category ID: ${categoryDoc._id}`);
+            filter.category = categoryDoc._id; // Filter by the ObjectId
+        } else {
+            console.log(`[Backend] Category slug "${category}" not found in DB.`); 
+            return res.json([]); 
+        }
     }
+    
     if (sellerId) {
-      filter.seller = sellerId as string;
+        console.log(`[Backend] Filtering by seller ID: ${sellerId}`);
+        filter.seller = sellerId as string;
     }
     if (search) {
       filter.$text = { $search: search as string };
@@ -91,10 +104,15 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
     }
 
     // Handle inStock filter (assuming stock > 0 means in stock)
-    // TEMPORARILY COMMENTED OUT FOR DEBUGGING
+    // Remove default filtering - let frontend control this
     // if (inStock === 'true' || inStock === undefined) { // Default to inStock=true
     //     filter.stock = { $gt: 0 };
     // }
+    if (inStock === 'false') { // Only filter if explicitly set to false (show all)
+        // No stock filter applied
+    } else if (inStock === 'true') { // Only filter if explicitly set to true
+         filter.stock = { $gt: 0 };
+    } // Otherwise (undefined), show all
 
     // Handle sorting
     switch (sortBy) {
@@ -116,14 +134,15 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
             break;
     }
 
-    console.log('[Backend] Query Filter:', JSON.stringify(filter)); // Log the filter object
-    console.log('[Backend] Sort Options:', JSON.stringify(sort)); // Log sort options
+    console.log('[Backend] Final Query Filter:', JSON.stringify(filter)); // Log the filter object
+    console.log('[Backend] Final Sort Options:', JSON.stringify(sort)); // Log sort options
 
     const products = await ProductModel.find(filter)
                                        .populate('seller', 'name email') // Populate seller info
+                                       .populate('category') // Added population for category
                                        .sort(sort); // Apply sorting
 
-    console.log(`[Backend] Found ${products.length} products.`); // Log number of products found
+    console.log(`[Backend] Found ${products.length} products after filtering.`); // Log number of products found
                                        
     res.json(products);
   } catch (error: any) {

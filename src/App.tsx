@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProductsList from "./pages/ProductsList";
+import CategoriesList from "@/pages/CategoriesList";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/CartPage";
 import Checkout from "./pages/Checkout";
@@ -27,7 +27,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <CartProvider>
-        <TooltipProvider>
+        {/* <TooltipProvider> */}
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -36,6 +36,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/products" element={<ProductsList />} />
+              <Route path="/categories" element={<CategoriesList />} />
               <Route path="/category/:slug" element={<ProductsList />} />
               <Route path="/product/:slug" element={<ProductDetail />} />
               <Route path="/cart" element={<CartPage />} />
@@ -55,7 +56,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </TooltipProvider>
+        {/* </TooltipProvider> */}
       </CartProvider>
     </AuthProvider>
   </QueryClientProvider>

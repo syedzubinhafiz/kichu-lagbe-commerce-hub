@@ -70,6 +70,16 @@ const ProductCard = ({ product, className }: ProductCardProps) => {
           </h3>
         </Link>
         
+        {/* Category Link/Tag */}
+        {product.category && (
+            <Link 
+                to={`/products?category=${product.category.slug}`} 
+                className="mt-1 text-xs text-gray-500 hover:text-brand-primary hover:underline transition-colors inline-block"
+            >
+                {product.category.name}
+            </Link>
+        )}
+
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isDiscountActive ? (

@@ -5,6 +5,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface ICategory extends Document {
   name: string;
   slug: string; // URL-friendly identifier
+  image?: string; // Added optional image field
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,10 @@ const CategorySchema: Schema = new Schema(
       // Basic slug validation (can be enhanced)
       match: [/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase alphanumeric with hyphens'],
     },
+    image: { // Added optional image field definition
+        type: String,
+        // Add URL validation if desired
+    }
   },
   {
     timestamps: true, // Automatically add createdAt and updatedAt fields

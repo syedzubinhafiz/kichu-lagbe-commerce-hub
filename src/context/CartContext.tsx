@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Cart, CartItem, Product } from '@/types';
 import { toast } from 'sonner';
@@ -54,6 +53,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const addToCart = (product: Product, quantity = 1) => {
+    // --- Add Stock Check --- 
+    if (product.stock <= 0) {
+      toast.error(`${product.title} is out of stock.`);
+      return; // Do not add to cart if stock is 0 or less
+    }
+    // --- End Stock Check --- 
+    
     setCart(currentCart => {
       const existingItemIndex = currentCart.items.findIndex(
         item => item.productId === product.id

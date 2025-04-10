@@ -154,7 +154,7 @@ const Header = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/products" className="text-foreground hover:text-brand-primary">
+                  <Link to="/categories" className="text-foreground hover:text-brand-primary">
                     Categories
                   </Link>
                 </li>
@@ -237,7 +237,7 @@ const Header = () => {
                 </li>
                 <li>
                   <Link 
-                    to="/products" 
+                    to="/categories" 
                     className="block py-2 text-lg font-medium"
                     onClick={toggleMenu}
                   >

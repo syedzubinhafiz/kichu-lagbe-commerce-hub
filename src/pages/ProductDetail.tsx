@@ -335,14 +335,14 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Button 
                 size="lg" 
-                className="flex-1 bg-brand-primary hover:bg-brand-dark"
+                className="flex-1 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleAddToCart}
                 disabled={product.stock <= 0}
               >
-                <ShoppingCart className="mr-2 h-5 w-5" /> 
+                <ShoppingCart className="mr-2 h-5 w-5" />
                 {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
               </Button>
               <Button size="lg" variant="outline" className="flex-1">
@@ -350,8 +350,13 @@ const ProductDetail = () => {
               </Button>
             </div>
 
+            {/* Conditional message if out of stock */}
+            {product.stock <= 0 && (
+                <p className="mt-3 text-sm text-red-600">This item is currently out of stock.</p>
+            )}
+
             {product.seller && (
-                <div className="text-sm text-gray-600 mb-4">
+                <div className="text-sm text-gray-600 mb-4 mt-4">
                     Sold by: <Link to={`/seller/${product.seller.id}`} className="text-brand-primary hover:underline">{product.seller.name}</Link>
                 </div>
             )}

@@ -6,7 +6,7 @@ export interface IProduct extends Document {
   seller: IUser['_id']; // Reference to the User (Seller)
   title: string;
   description: string;
-  category: string;
+  category: mongoose.Types.ObjectId; // Changed from String
   price: number;
   images: string[]; // Array of image URLs
   previewVideo?: string; // Optional video URL
@@ -16,6 +16,7 @@ export interface IProduct extends Document {
   createdAt: Date;
   updatedAt: Date;
   slug: string;
+  stock: number; // Added stock field
 }
 
 // Interface representing the static methods of the model.
@@ -46,9 +47,9 @@ const ProductSchema: Schema<IProduct> = new Schema(
       required: [true, 'Product description is required'],
     },
     category: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
       required: [true, 'Product category is required'],
-      trim: true,
     },
     price: {
       type: Number,
@@ -71,6 +72,12 @@ const ProductSchema: Schema<IProduct> = new Schema(
     discountCountdown: {
       type: Date,
     },
+    stock: { // Added stock field definition
+        type: Number,
+        required: [true, 'Stock quantity is required'],
+        min: [0, 'Stock cannot be negative'],
+        default: 0
+    }
   },
   {
     timestamps: true, // Automatically add createdAt and updatedAt fields

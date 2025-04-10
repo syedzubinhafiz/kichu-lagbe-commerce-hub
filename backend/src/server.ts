@@ -7,6 +7,7 @@ import authRoutes from './routes/authRoutes'; // Import auth routes
 import productRoutes from './routes/productRoutes'; // Import product routes
 import orderRoutes from './routes/orderRoutes'; // Import order routes
 import adminRoutes from './routes/adminRoutes'; // Import admin routes
+import categoryRoutes from './routes/categoryRoutes'; // Import category routes
 import { notFound, errorHandler } from './middlewares/errorMiddleware'; // Import error handlers
 
 dotenv.config();
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes); // Mount auth routes
 app.use('/api/products', productRoutes); // Mount product routes
 app.use('/api/orders', orderRoutes); // Mount order routes
 app.use('/api/admin', adminRoutes); // Mount admin routes
+app.use('/api/categories', categoryRoutes); // Mount category routes
 
 // TODO: Add other routes (product, order, user, admin)
 
