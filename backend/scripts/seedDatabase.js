@@ -51,139 +51,204 @@ const sampleCategories = [
     { name: 'Home Goods', slug: 'home-goods', image: 'https://images.unsplash.com/photo-1588854337236-6889d631faa8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQwMg&ixlib=rb-4.0.3&q=80&w=400' },
     { name: 'Books', slug: 'books', image: 'https://images.unsplash.com/photo-1549122728-f519709caa9c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQwMg&ixlib=rb-4.0.3&q=80&w=400' },
     { name: 'Groceries', slug: 'groceries', image: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQwMg&ixlib=rb-4.0.3&q=80&w=400' },
-    // Add more categories if needed, or ensure the Category model has an image field
+    { name: 'Sports & Outdoors', slug: 'sports-outdoors', image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQwM&ixlib=rb-4.0.3&q=80&w=400' },
+    { name: 'Toys & Games', slug: 'toys-games', image: 'https://images.unsplash.com/photo-1550751827-413f8b61acd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQwM&ixlib=rb-4.0.3&q=80&w=400' },
 ];
 
 const sampleUsers = [
     { name: 'Alice Buyer', email: 'alice@example.com', password: 'password123', role: 'buyer' },
     { name: 'Bob Buyer', email: 'bob@example.com', password: 'password123', role: 'buyer' },
+    { name: 'Eve Buyer', email: 'eve@example.com', password: 'password123', role: 'buyer' },
     { name: 'Charlie Seller', email: 'charlie@example.com', password: 'password123', role: 'seller' },
     { name: 'Diana Seller', email: 'diana@example.com', password: 'password123', role: 'seller' },
+    { name: 'Frank Seller', email: 'frank@example.com', password: 'password123', role: 'seller' },
     { name: 'Admin User', email: 'admin@example.com', password: 'password123', role: 'admin' },
 ];
 
 // Function to create sample products, needs seller and category IDs
-// Updated to match src/data/mockData.ts for consistency
-const createSampleProducts = (sellers, categories) => [
-  {
-    title: 'Wireless Bluetooth Headphones',
-    slug: 'wireless-bluetooth-headphones',
-    description: 'Experience premium sound quality with these comfortable wireless headphones. Features include noise cancellation, 30-hour battery life, and quick charging.',
-    price: 1999,
-    stock: 50, // Keep stock as defined in mock data or adjust as needed
-    images: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-      'https://images.unsplash.com/photo-1484704849700-f032a568e944'
-    ],
-    videoUrl: 'https://www.example.com/videos/headphones-demo.mp4',
-    category: categories.find(c => c.slug === 'electronics')._id,
-    seller: sellers.find(s => s.email === 'charlie@example.com')._id, // Assuming charlie is a seller
-  },
-  {
-    title: 'Smart Watch with Heart Rate Monitor',
-    slug: 'smart-watch-heart-rate',
-    description: 'Track your fitness goals with this advanced smartwatch. Features include heart rate monitoring, sleep tracking, and water resistance up to 50 meters.',
-    price: 2499,
-    stock: 30,
-    images: [
-      'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9',
-      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1'
-    ],
-    category: categories.find(c => c.slug === 'electronics')._id,
-    seller: sellers.find(s => s.email === 'charlie@example.com')._id,
-  },
-  {
-    title: 'Men\'s Casual Cotton T-shirt',
-    slug: 'mens-casual-cotton-tshirt',
-    description: 'Comfortable and stylish cotton t-shirt for everyday wear. Available in multiple colors and sizes.',
-    price: 499,
-    stock: 0, // Keep the stock: 0 from previous edit
-    images: [
-      'https://images.unsplash.com/photo-1576566588028-4147f3842f27',
-      'https://images.unsplash.com/photo-1562157873-818bc0726f68'
-    ],
-    category: categories.find(c => c.slug === 'clothing')._id,
-    seller: sellers.find(s => s.email === 'diana@example.com')._id, // Assuming diana is a seller
-  },
-  {
-    title: 'Non-Stick Cookware Set',
-    slug: 'non-stick-cookware-set',
-    description: 'Complete cookware set featuring durable non-stick coating for healthier cooking with less oil. Includes pots, pans, and utensils.',
-    price: 3499,
-    stock: 25,
-    images: [
-      'https://images.unsplash.com/photo-1584255014406-2a68ea38e40c',
-      'https://images.unsplash.com/photo-1588168333986-5078d3ae3976'
-    ],
-    videoUrl: 'https://www.example.com/videos/cookware-demo.mp4',
-    category: categories.find(c => c.slug === 'home-goods')._id, // Adjusted category slug
-    seller: sellers.find(s => s.email === 'diana@example.com')._id,
-  },
-  {
-    title: 'Professional Basketball',
-    slug: 'professional-basketball',
-    description: 'Official size and weight basketball designed for indoor and outdoor play. Features superior grip and durability.',
-    price: 899,
-    stock: 75,
-    images: [
-      'https://images.unsplash.com/photo-1494891848038-7bd202a2afeb',
-      'https://images.unsplash.com/photo-1598346763242-7fbe5182e121'
-    ],
-    // Note: 'Sports & Outdoors' category doesn't exist in sampleCategories, using 'home-goods' instead for now.
-    // You might want to add 'Sports & Outdoors' to sampleCategories.
-    category: categories.find(c => c.slug === 'home-goods')._id, 
-    seller: sellers.find(s => s.email === 'diana@example.com')._id,
-  },
-  {
-    title: 'Best-selling Fiction Novel',
-    slug: 'bestselling-fiction-novel',
-    description: 'Award-winning novel that captures the imagination and takes readers on an incredible journey. Available in hardcover and paperback.',
-    price: 399,
-    stock: 200,
-    images: [
-      'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5',
-      'https://images.unsplash.com/photo-1544947950-fa07a98d237f'
-    ],
-    category: categories.find(c => c.slug === 'books')._id,
-    seller: sellers.find(s => s.email === 'charlie@example.com')._id,
-  },
-    {
-        title: 'Smart LED Light Bulb', // Keep this one as well
-        slug: 'smart-led-bulb',
-        description: 'Control your lighting with your voice or app. Dimmable and color-changing.',
-        price: 1299, 
-        stock: 0, // Keep the stock: 0 from previous edit
-        images: ['https://picsum.photos/seed/product3/400/300'], // Keep original image for variety?
-        category: categories.find(c => c.slug === 'electronics')._id, 
-        seller: sellers.find(s => s.email === 'charlie@example.com')._id,
-    },
-];
+const createSampleProducts = (sellers, categories) => {
+    const charlie = sellers.find(s => s.email === 'charlie@example.com');
+    const diana = sellers.find(s => s.email === 'diana@example.com');
+    const frank = sellers.find(s => s.email === 'frank@example.com');
+
+    const electronics = categories.find(c => c.slug === 'electronics');
+    const clothing = categories.find(c => c.slug === 'clothing');
+    const homeGoods = categories.find(c => c.slug === 'home-goods');
+    const books = categories.find(c => c.slug === 'books');
+    const sports = categories.find(c => c.slug === 'sports-outdoors');
+    const toys = categories.find(c => c.slug === 'toys-games');
+
+    if (!charlie || !diana || !frank || !electronics || !clothing || !homeGoods || !books || !sports || !toys) {
+        throw new Error('Could not find all required sellers or categories for seeding products.');
+    }
+    
+    return [
+        {
+            title: 'Wireless Bluetooth Headphones',
+            slug: 'wireless-bluetooth-headphones',
+            description: 'Experience premium sound quality with these comfortable wireless headphones. Features include noise cancellation, 30-hour battery life, and quick charging.',
+            price: 1999,
+            stock: 50,
+            images: [
+            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+            'https://images.unsplash.com/photo-1484704849700-f032a568e944'
+            ],
+            videoUrl: 'https://www.example.com/videos/headphones-demo.mp4',
+            category: electronics._id,
+            seller: charlie._id,
+        },
+        {
+            title: 'Smart Watch with Heart Rate Monitor',
+            slug: 'smart-watch-heart-rate',
+            description: 'Track your fitness goals with this advanced smartwatch. Features include heart rate monitoring, sleep tracking, and water resistance up to 50 meters.',
+            price: 2499,
+            stock: 30,
+            images: [
+            'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9',
+            'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1'
+            ],
+            category: electronics._id,
+            seller: charlie._id,
+        },
+        {
+            title: 'Men\'s Casual Cotton T-shirt',
+            slug: 'mens-casual-cotton-tshirt',
+            description: 'Comfortable and stylish cotton t-shirt for everyday wear. Available in multiple colors and sizes.',
+            price: 499,
+            stock: 0,
+            images: [
+            'https://images.unsplash.com/photo-1576566588028-4147f3842f27',
+            'https://images.unsplash.com/photo-1562157873-818bc0726f68'
+            ],
+            category: clothing._id,
+            seller: diana._id,
+        },
+        {
+            title: 'Non-Stick Cookware Set',
+            slug: 'non-stick-cookware-set',
+            description: 'Complete cookware set featuring durable non-stick coating for healthier cooking with less oil. Includes pots, pans, and utensils.',
+            price: 3499,
+            stock: 25,
+            images: [
+            'https://images.unsplash.com/photo-1584255014406-2a68ea38e40c',
+            'https://images.unsplash.com/photo-1588168333986-5078d3ae3976'
+            ],
+            videoUrl: 'https://www.example.com/videos/cookware-demo.mp4',
+            category: homeGoods._id,
+            seller: diana._id,
+        },
+        {
+            title: 'Professional Basketball',
+            slug: 'professional-basketball',
+            description: 'Official size and weight basketball designed for indoor and outdoor play. Features superior grip and durability.',
+            price: 899,
+            stock: 75,
+            images: [
+            'https://images.unsplash.com/photo-1494891848038-7bd202a2afeb',
+            'https://images.unsplash.com/photo-1598346763242-7fbe5182e121'
+            ],
+            category: sports._id, 
+            seller: diana._id,
+        },
+        {
+            title: 'Best-selling Fiction Novel',
+            slug: 'bestselling-fiction-novel',
+            description: 'Award-winning novel that captures the imagination and takes readers on an incredible journey. Available in hardcover and paperback.',
+            price: 399,
+            stock: 200,
+            images: [
+            'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5',
+            'https://images.unsplash.com/photo-1544947950-fa07a98d237f'
+            ],
+            category: books._id,
+            seller: charlie._id,
+        },
+        {
+            title: 'Smart LED Light Bulb',
+            slug: 'smart-led-bulb',
+            description: 'Control your lighting with your voice or app. Dimmable and color-changing.',
+            price: 1299, 
+            stock: 0,
+            images: ['https://picsum.photos/seed/product3/400/300'],
+            category: electronics._id, 
+            seller: charlie._id,
+        },
+        {
+            title: 'Yoga Mat',
+            slug: 'yoga-mat',
+            description: 'High-density foam yoga mat for comfort and stability during your practice. Non-slip surface.',
+            price: 1499,
+            stock: 40,
+            images: ['https://images.unsplash.com/photo-1591291621164-2c6367723315?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQxMQ&ixlib=rb-4.0.3&q=80&w=400'],
+            category: sports._id,
+            seller: frank._id,
+        },
+        {
+            title: 'Wooden Building Blocks Set',
+            slug: 'wooden-building-blocks',
+            description: 'Classic wooden building blocks set for kids. Encourages creativity and fine motor skills. 50 pieces.',
+            price: 999,
+            stock: 60,
+            images: ['https://images.unsplash.com/photo-1608889335941-8819404d15b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQxMQ&ixlib=rb-4.0.3&q=80&w=400'],
+            category: toys._id,
+            seller: frank._id,
+        },
+        {
+            title: 'Graphic Print Hoodie',
+            slug: 'graphic-print-hoodie',
+            description: 'Comfortable fleece hoodie with a unique graphic print. Perfect for casual wear.',
+            price: 1599,
+            stock: 25,
+            images: ['https://images.unsplash.com/photo-1556157382-97eda2d62296?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQxMw&ixlib=rb-4.0.3&q=80&w=400'],
+            category: clothing._id,
+            seller: diana._id,
+        },
+        {
+            title: 'Portable Bluetooth Speaker',
+            slug: 'portable-bluetooth-speaker',
+            description: 'Compact and powerful Bluetooth speaker with long battery life and waterproof design.',
+            price: 2999,
+            stock: 35,
+            images: ['https://images.unsplash.com/photo-1589146612001-6894f4a47599?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTY4MjYxNzQxMw&ixlib=rb-4.0.3&q=80&w=400'],
+            category: electronics._id,
+            seller: charlie._id,
+        },
+    ];
+};
 
 // Function to create sample orders, needs user, seller, and product IDs
 const createSampleOrders = (buyers, sellers, products) => {
     const orderStatusHistory = (status, timestamp) => ({ status, timestamp });
 
+    // Find the necessary buyers/sellers
+    const alice = buyers.find(b => b.email === 'alice@example.com');
+    const bob = buyers.find(b => b.email === 'bob@example.com');
+    const eve = buyers.find(b => b.email === 'eve@example.com');
+    const charlie = sellers.find(s => s.email === 'charlie@example.com');
+    const diana = sellers.find(s => s.email === 'diana@example.com');
+    const frank = sellers.find(s => s.email === 'frank@example.com');
+
     // Find the necessary products, throwing errors if not found
     const headphones = products.find(p => p.slug === 'wireless-bluetooth-headphones');
-    if (!headphones) throw new Error('Could not find product with slug "wireless-bluetooth-headphones"');
-
     const tshirt = products.find(p => p.slug === 'mens-casual-cotton-tshirt');
-     if (!tshirt) throw new Error('Could not find product with slug "mens-casual-cotton-tshirt"');
-
     const bulb = products.find(p => p.slug === 'smart-led-bulb');
-    if (!bulb) throw new Error('Could not find product with slug "smart-led-bulb"');
+    const yogaMat = products.find(p => p.slug === 'yoga-mat');
+    const hoodie = products.find(p => p.slug === 'graphic-print-hoodie');
 
+    if (!headphones || !tshirt || !bulb || !yogaMat || !hoodie || !alice || !bob || !eve || !charlie || !diana || !frank) {
+        throw new Error('Could not find all required users or products for seeding orders.');
+    }
 
     return [
         // Order 1: Alice buys headphones from Charlie
         {
-            buyer: buyers.find(b => b.email === 'alice@example.com')._id,
-            seller: sellers.find(s => s.email === 'charlie@example.com')._id,
+            buyer: alice._id,
+            seller: charlie._id,
             product: headphones._id, 
             quantity: 1,
             totalPrice: headphones.price, 
             paymentMethod: 'Bkash', 
-            currentStatus: 'Processing', // Hardcoded string
+            currentStatus: 'Processing',
             statusHistory: [
                 orderStatusHistory('Pending Approval', new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)), 
                 orderStatusHistory('Processing', new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)), 
@@ -192,13 +257,13 @@ const createSampleOrders = (buyers, sellers, products) => {
         },
         // Order 2: Bob buys T-shirt from Diana
         {
-            buyer: buyers.find(b => b.email === 'bob@example.com')._id,
-            seller: sellers.find(s => s.email === 'diana@example.com')._id,
+            buyer: bob._id,
+            seller: diana._id,
             product: tshirt._id,
             quantity: 2,
             totalPrice: tshirt.price * 2,
             paymentMethod: 'Cash on Delivery', 
-            currentStatus: 'Completed', // Hardcoded string
+            currentStatus: 'Completed', 
             statusHistory: [
                 orderStatusHistory('Pending Approval', new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)),
                 orderStatusHistory('Processing', new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)),
@@ -209,17 +274,48 @@ const createSampleOrders = (buyers, sellers, products) => {
         },
          // Order 3: Alice buys light bulb from Charlie
         {
-            buyer: buyers.find(b => b.email === 'alice@example.com')._id,
-            seller: sellers.find(s => s.email === 'charlie@example.com')._id,
+            buyer: alice._id,
+            seller: charlie._id,
             product: bulb._id,
             quantity: 3,
             totalPrice: bulb.price * 3,
             paymentMethod: 'Bkash', 
-            currentStatus: 'Pending Approval', // Hardcoded string
+            currentStatus: 'Pending Approval',
             statusHistory: [
                 orderStatusHistory('Pending Approval', new Date(Date.now() - 1 * 60 * 60 * 1000)), 
             ],
             shippingAddress: { street: '123 Buyer St', city: 'Buyerville', postalCode: '12345', country: 'PurchaseLand' },
+        },
+        // Order 4: Eve buys Yoga Mat from Frank
+        {
+            buyer: eve._id,
+            seller: frank._id,
+            product: yogaMat._id,
+            quantity: 1,
+            totalPrice: yogaMat.price,
+            paymentMethod: 'Cash on Delivery',
+            currentStatus: 'Out for Delivery',
+            statusHistory: [
+                orderStatusHistory('Pending Approval', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)),
+                orderStatusHistory('Processing', new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)),
+                orderStatusHistory('Out for Delivery', new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)),
+            ],
+            shippingAddress: { street: '789 New St', city: 'Orderton', postalCode: '11223', country: 'ShippingLand' },
+        },
+        // Order 5: Bob buys Hoodie from Diana
+        {
+            buyer: bob._id,
+            seller: diana._id,
+            product: hoodie._id,
+            quantity: 1,
+            totalPrice: hoodie.price,
+            paymentMethod: 'Bkash',
+            currentStatus: 'Cancelled',
+            statusHistory: [
+                orderStatusHistory('Pending Approval', new Date(Date.now() - 2 * 60 * 60 * 1000)), 
+                orderStatusHistory('Cancelled', new Date(Date.now() - 1 * 60 * 60 * 1000)),
+            ],
+            shippingAddress: { street: '456 Customer Ave', city: 'Client City', postalCode: '67890', country: 'OrderNation' },
         },
     ];
 };

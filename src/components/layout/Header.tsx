@@ -164,16 +164,20 @@ const Header = () => {
 
           {/* Right section with cart and profile */}
           <div className="flex items-center gap-4">
-            <Link to="/cart">
-              <Button variant="ghost" className="relative" size="icon">
-                <ShoppingCart className="h-5 w-5" />
-                {cart.totalItems > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-xs font-bold text-black">
-                    {cart.totalItems}
-                  </span>
-                )}
-              </Button>
-            </Link>
+            {/* --- Conditionally render Cart Icon for Buyers --- */}
+            {user?.role === 'buyer' && (
+              <Link to="/cart">
+                <Button variant="ghost" className="relative" size="icon">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cart.totalItems > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-xs font-bold text-black">
+                      {cart.totalItems}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
+            {/* --- End Cart Icon Conditional Rendering --- */}
 
             <div className="hidden md:block">
               {renderAuthLinks()}

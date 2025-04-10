@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -96,20 +95,20 @@ const Login = () => {
 
           <div className="mt-8 border-t border-gray-200 pt-6">
             <p className="text-sm text-gray-500 text-center mb-4">
-              For demo purposes, you can use:
+              For demo purposes, use these credentials:
             </p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                 <span>Admin login:</span>
-                <code>admin@kichulage.com</code>
+                <code>admin@example.com</code>
               </div>
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                 <span>Seller login:</span>
-                <code>seller@kichulage.com</code>
+                <code>charlie@example.com</code>
               </div>
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span>Any password will work</span>
-                <code>password</code>
+                <span>Password (for all):</span>
+                <code>password123</code>
               </div>
             </div>
           </div>

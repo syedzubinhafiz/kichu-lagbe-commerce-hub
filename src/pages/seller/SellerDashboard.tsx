@@ -220,6 +220,16 @@ const mapFrontendStatusToBackend = (frontendStatus: FrontendStatus): string => {
     }
 }
 
+// **NEW** Helper function to generate a slug
+const generateSlug = (title: string): string => {
+    return title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove non-alphanumeric characters except spaces and hyphens
+        .trim()
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
+};
+
 const SellerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -336,8 +346,8 @@ const SellerDashboard = () => {
       }
   });
 
-  // Mutation to Add New Product
-  const { mutate: addProduct, isPending: isAddingProduct } = useMutation<BackendProduct, Error, Omit<typeof newProductData, 'images' | 'price' | 'stock'> & { price: number; stock: number; images: string[] }>({
+  // **NEW** Mutation to Add New Product
+  const { mutate: addProduct, isPending: isAddingProduct } = useMutation<BackendProduct, Error, Omit<typeof newProductData, 'images' | 'price' | 'stock'> & { slug: string; price: number; stock: number; images: string[] }>({
       mutationFn: async (productData) => {
           const response = await apiClient.post('/api/products', productData);
           return response.data;
@@ -356,7 +366,7 @@ const SellerDashboard = () => {
   });
 
   // **NEW** Mutation to Edit Product
-  const { mutate: editProduct, isPending: isEditingProduct } = useMutation<BackendProduct, Error, { productId: string; productData: Omit<typeof editProductData, 'images' | 'price' | 'stock'> & { price: number; stock: number; images: string[] } }>({
+  const { mutate: editProduct, isPending: isEditingProduct } = useMutation<BackendProduct, Error, { productId: string; productData: Omit<typeof editProductData, 'images' | 'price' | 'stock'> & { slug: string; price: number; stock: number; images: string[] } }>({
       mutationFn: async ({ productId, productData }) => {
           const response = await apiClient.put(`/api/products/${productId}`, productData);
           return response.data;
@@ -417,6 +427,7 @@ const SellerDashboard = () => {
 
     const priceNum = parseFloat(newProductData.price);
     const stockNum = parseInt(newProductData.stock, 10);
+    const title = newProductData.title.trim(); // Trim title once
 
     if (isNaN(priceNum) || priceNum <= 0) {
         toast.error("Please enter a valid positive price.");
@@ -430,7 +441,7 @@ const SellerDashboard = () => {
         toast.error("Please select a category.");
         return;
     }
-    if (!newProductData.title.trim()) {
+    if (!title) { // Use trimmed title for check
         toast.error("Please enter a product title.");
         return;
     }
@@ -449,8 +460,11 @@ const SellerDashboard = () => {
         return;
     } 
 
+    const slug = generateSlug(title); // Generate slug from trimmed title
+
     addProduct({ 
-        title: newProductData.title.trim(),
+        title: title, // Use trimmed title
+        slug: slug, // Ensure slug is here
         description: newProductData.description.trim(),
         price: priceNum,
         stock: stockNum,
@@ -490,6 +504,7 @@ const SellerDashboard = () => {
 
     const priceNum = parseFloat(editProductData.price);
     const stockNum = parseInt(editProductData.stock, 10);
+    const title = editProductData.title.trim(); // Trim title
 
     // --- Basic Validation (similar to add form) ---
     if (isNaN(priceNum) || priceNum <= 0) {
@@ -504,7 +519,7 @@ const SellerDashboard = () => {
         toast.error("Please select a category.");
         return;
     }
-    if (!editProductData.title.trim()) {
+    if (!title) { // Use trimmed title
         toast.error("Please enter a product title.");
         return;
     }
@@ -519,10 +534,13 @@ const SellerDashboard = () => {
     }
     // --- End Validation ---
 
+    const slug = generateSlug(title); // Generate slug for edit as well
+
     editProduct({
         productId: editingProduct.id,
         productData: {
-            title: editProductData.title.trim(),
+            title: title, // Use trimmed title
+            slug: slug, // **CORRECTED** Place slug inside productData
             description: editProductData.description.trim(),
             price: priceNum,
             stock: stockNum,
@@ -571,6 +589,17 @@ const SellerDashboard = () => {
         {/* Main Content Tabs */}
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
            {/* ... (TabsList and Add Product Button) ... */}
+           <div className="flex items-center justify-between mb-6">
+               <TabsList>
+                 <TabsTrigger value="products">Products</TabsTrigger>
+                 <TabsTrigger value="orders">Orders</TabsTrigger>
+               </TabsList>
+               {activeTab === 'products' && !showAddForm && (
+                 <Button onClick={() => setShowAddForm(true)}>
+                   + Add Product
+                 </Button>
+               )}
+           </div>
           
           {/* Products Tab Content */}
           <TabsContent value="products">

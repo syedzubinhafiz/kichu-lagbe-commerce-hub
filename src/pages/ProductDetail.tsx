@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Product, Review, Category, User as FrontendUser } from '@/types';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/lib/apiClient';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [timeRemaining, setTimeRemaining] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const { addToCart } = useCart();
+  const { user } = useAuth();
 
   const { 
       data: backendProduct, 
@@ -335,25 +337,24 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <Button 
-                size="lg" 
-                className="flex-1 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleAddToCart}
-                disabled={product.stock <= 0}
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
-              </Button>
-              <Button size="lg" variant="outline" className="flex-1">
-                <Heart className="mr-2 h-5 w-5" /> Add to Wishlist
-              </Button>
-            </div>
-
-            {/* Conditional message if out of stock */}
-            {product.stock <= 0 && (
-                <p className="mt-3 text-sm text-red-600">This item is currently out of stock.</p>
+            {/* --- Conditional Rendering for Buyer Buttons --- */}
+            {user?.role === 'buyer' && (
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                <Button 
+                  size="lg" 
+                  className="flex-1 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleAddToCart}
+                  disabled={product.stock <= 0}
+                >
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                </Button>
+                <Button size="lg" variant="outline" className="flex-1">
+                  <Heart className="mr-2 h-5 w-5" /> Add to Wishlist
+                </Button>
+              </div>
             )}
+            {/* --- End Conditional Rendering --- */}
 
             {product.seller && (
                 <div className="text-sm text-gray-600 mb-4 mt-4">

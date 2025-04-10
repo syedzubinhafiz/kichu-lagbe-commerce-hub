@@ -9,9 +9,11 @@ import mongoose from 'mongoose'; // Import mongoose for ObjectId check if needed
 // Zod Schema for creating/updating a Product
 const productSchema = z.object({
   title: z.string().min(1, 'Title is required'),
+  slug: z.string().min(1, 'Slug is required'),
   description: z.string().min(1, 'Description is required'),
   category: z.string().min(1, 'Category is required'),
   price: z.number().positive('Price must be a positive number'),
+  stock: z.number().int().min(0, 'Stock cannot be negative'),
   images: z.array(z.string().url('Invalid URL format')).min(1, 'At least one image URL is required'),
   previewVideo: z.string().url('Invalid URL format').optional(),
   discountPrice: z.number().positive('Discount price must be positive').optional(),
